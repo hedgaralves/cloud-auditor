@@ -1,12 +1,13 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /app
 
-RUN apt-get update && apt-get upgrade -y \
-    && rm -rf /var/lib/apt/lists/*
+
+RUN apk update && apk upgrade
 
 COPY requirements.txt .
 
+# Atualiza ferramentas essenciais do Python
 RUN pip install --no-cache-dir --upgrade pip wheel setuptools
 
 RUN pip install --no-cache-dir -r requirements.txt
