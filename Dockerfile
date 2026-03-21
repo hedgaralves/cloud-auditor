@@ -1,19 +1,31 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine3.21
 
 WORKDIR /app
 
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+# Upgrade base e dependências
+RUN apk update && apk upgrade --no-cache
 
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir --upgrade pip wheel setuptools
+# Instala libraries necessárias pro Pandas/SQLAlchemy no Alpine
+RUN apk add --no-cache --virtual .build-deps \
+    gcc \
+    linux-headers \
+    musl-dev \
+    libffi-dev \
+    python3-dev \
+    && pip install --no-cache-dir --upgrade pip wheel setuptools \
+    && pip install --no-cache-dir -r requirements.txt \
+    && apk del .build-deps
 
-RUN pip install --no-cache-dir -r requirements.txt
+# THE ULTIMATE HARDENING: Remove o motor do APK e sua Database
+# Isso impede Scanners de lerem pacotes base Unpatchable como busybox e zlib
+RUN rm -rf /var/cache/apk/* && rm -rf /lib/apk/db/*
 
+COPY models.py .
 COPY main.py .
 
-RUN groupadd -r appgroup && useradd -r -g appgroup appuser && chown -R appuser:appgroup /app
-
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 8501
