@@ -1,2 +1,18 @@
-echo "__pycache__/" >> .gitignore
-echo ".env" >> .gitignore
+# Python Cache
+__pycache__/
+*.pyc
+
+# Banco de Dados
+*.db
+*.sqlite3
+test.db
+
+# Environments & IDEs
+.env
+.venv
+venv/
+.idea/
+.vscode/
+
+# Logs e Temas
+.streamlit/secrets.toml
