@@ -130,7 +130,7 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 # Variáveis de Ambiente e AWS
 AWS_ENDPOINT = os.getenv("AWS_ENDPOINT_URL")
 AWS_REGION = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/cloudauditor")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////app/data/cloudauditor.db")
 
 
 def _boto_client(service):
@@ -243,11 +243,19 @@ def audit_ec2_stopped():
     resultados = []
     for reservation in reservations:
         for instance in reservation.get('Instances', []):
-            # Estima custo dos volumes EBS anexados (gp2 $0.10/GB-mês)
-            total_ebs_gb = sum(
-                bdm.get('Ebs', {}).get('VolumeSize', 0)
+            # describe_instances does not return VolumeSize — must call describe_volumes
+            volume_ids = [
+                bdm['Ebs']['VolumeId']
                 for bdm in instance.get('BlockDeviceMappings', [])
-            )
+                if 'Ebs' in bdm and 'VolumeId' in bdm['Ebs']
+            ]
+            total_ebs_gb = 0
+            if volume_ids:
+                try:
+                    vols = ec2.describe_volumes(VolumeIds=volume_ids)
+                    total_ebs_gb = sum(v.get('Size', 0) for v in vols.get('Volumes', []))
+                except Exception:
+                    pass
             custo_mensal = total_ebs_gb * 0.10
             tags = {t['Key']: t['Value'] for t in instance.get('Tags', [])}
             nome = tags.get('Name', instance['InstanceId'])
@@ -806,7 +814,7 @@ try:
     if st.sidebar.button("💾 Persistir Auditoria no Banco"):
         with st.spinner("Registrando scan no PostgreSQL..."):
             if save_audit_to_db(account_id, finops_data, sec_data, economia_total_usd):
-                st.sidebar.success("Histórico salvo com sucesso!")
+                st.sidebar.success("Histórico salvo com sucesso! 👍")
                 st.balloons()
 
     # Exibição do Histórico Recente na Lateral

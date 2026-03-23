@@ -25,7 +25,7 @@ RUN rm -rf /var/cache/apk/* && rm -rf /lib/apk/db/*
 COPY models.py .
 COPY main.py .
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
+RUN mkdir -p /app/data && addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 8501

@@ -43,15 +43,64 @@ O projeto possui backend persistente estruturado no padrão MVC leve, com arquit
 
 ## ⚙️ Como Executar (Ambiente Produtivo)
 
-Você não precisa baixar o código para usar. Basta rodar a imagem oficial do Docker Hub injetando chaves temporárias (com permissão `ViewOnlyAccess`) da sua conta AWS:
+Escolha uma das duas opções abaixo dependendo da sua arquitetura e preferência.
+
+---
+
+### Opção A — Imagem pronta do Docker Hub (sem build, amd64)
+
+Nenhum download de código necessário. A imagem pública funciona diretamente em máquinas **Intel/AMD64**.
+
+> **Importante:** a imagem do Docker Hub usa PostgreSQL como banco padrão. Passe `DATABASE_URL` apontando para `/tmp` e monte um volume nesse mesmo caminho para persistência:
 
 ```bash
-docker run -d -p 8501:8501 \
-  -e AWS_ACCESS_KEY_ID="SUA_ACCESS_KEY" \
-  -e AWS_SECRET_ACCESS_KEY="SEU_SECRET_KEY" \
-  -e AWS_DEFAULT_REGION="us-east-1" \
-  hedgaraws/cloud-auditor-web:1.1.1
-Acesse o painel em: http://localhost:8501
+docker run -d -p 8501:8501 -v cloud-auditor-data:/tmp -e DATABASE_URL="sqlite:////tmp/cloudauditor.db" -e AWS_ACCESS_KEY_ID="SUA_ACCESS_KEY" -e AWS_SECRET_ACCESS_KEY="SEU_SECRET_KEY" -e AWS_DEFAULT_REGION="us-east-1" hedgaraws/cloud-auditor-web:1.1.1
+```
+
+Verifique se o volume foi montado corretamente:
+
+```bash
+docker inspect $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor-web:1.1.1) --format '{{json .Mounts}}'
+```
+
+A saída deve conter `"Name":"cloud-auditor-data"` e `"Destination":"/tmp"`. Se o resultado for `[]`, o container foi iniciado sem o volume — pare, remova e reinicie com o comando acima:
+
+```bash
+docker stop $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor-web:1.1.1) && docker rm $(docker ps -aq --filter ancestor=hedgaraws/cloud-auditor-web:1.1.1)
+```
+
+> Em Mac Apple Silicon (M1/M2/M3/M4) esta imagem roda via emulação e pode exibir um aviso de plataforma. Use a Opção B para build nativo.
+
+---
+
+### Opção B — Build local (recomendado para ARM64 / Apple Silicon)
+
+**Passo 1 — Clone o repositório e entre na pasta:**
+
+```bash
+git clone https://github.com/hedgaralves/cloud-auditor-web.git
+cd cloud-auditor-web
+```
+
+**Passo 2 — Build da imagem para sua arquitetura:**
+
+```bash
+# Apple Silicon (M1/M2/M3/M4)
+docker build --platform linux/arm64 -t cloud-auditor-web:local .
+
+# Intel / AMD64
+docker build --platform linux/amd64 -t cloud-auditor-web:local .
+```
+
+**Passo 3 — Execute:**
+
+```bash
+docker run -d -p 8501:8501 -v cloud-auditor-data:/app/data -e AWS_ACCESS_KEY_ID="SUA_ACCESS_KEY" -e AWS_SECRET_ACCESS_KEY="SEU_SECRET_KEY" -e AWS_DEFAULT_REGION="us-east-1" cloud-auditor-web:local
+```
+
+---
+
+Acesse o painel em: **http://localhost:8501**
 
 ### 🔐 Permissões IAM Necessárias (AWS Policy)
 Para que o Cloud Auditor V2 consiga rodar as 14 varreduras sem erros de `AccessDenied`, crie uma Policy no IAM (com escopo estrito de Leitura) e associe ao usuário que provê as credenciais:
@@ -90,21 +139,121 @@ Para que o Cloud Auditor V2 consiga rodar as 14 varreduras sem erros de `AccessD
 }
 ```
 
-🧪 Como Executar Localmente (com LocalStack)
-Para testar a ferramenta sem custo na AWS, você pode usar o LocalStack. Inicie o LocalStack localmente e passe a variável AWS_ENDPOINT_URL no contêiner:
+## 🧪 Como Executar Localmente (com LocalStack)
 
-Bash
+Para testar sem custos na AWS real, use o **LocalStack** — um emulador local dos serviços AWS.
+
+### Pré-requisitos
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e em execução
+- [LocalStack CLI](https://docs.localstack.cloud/getting-started/installation/) (opcional, mas recomendado)
+
+---
+
+### Passo 1 — Iniciar o LocalStack
+
+```bash
+# Via Docker (funciona em amd64 e arm64)
+docker run -d \
+  --name localstack \
+  -p 4566:4566 \
+  -e SERVICES=s3,ec2,iam,rds,dynamodb,elbv2,lambda,cloudtrail \
+  localstack/localstack:latest
+```
+
+Aguarde até o LocalStack estar saudável:
+
+```bash
+docker logs -f localstack
+# Procure pela linha: "Ready."
+```
+
+---
+
+### Passo 2 — Semear recursos vulneráveis (mock)
+
+Clone o repositório e execute o script de seed para popular o LocalStack com recursos simulados:
+
+```bash
+git clone https://github.com/hedgaralves/cloud-auditor-web.git
+cd cloud-auditor-web
+
+pip install boto3
+AWS_ENDPOINT_URL=http://localhost:4566 python mock_aws_env.py
+```
+
+---
+
+### Passo 3 — Build da imagem para sua arquitetura
+
+O build local garante compatibilidade nativa sem avisos de plataforma.
+
+**Apple Silicon / ARM64 (M1, M2, M3, M4):**
+
+```bash
+docker build --platform linux/arm64 -t cloud-auditor-web:local .
+```
+
+**Intel / AMD64:**
+
+```bash
+docker build --platform linux/amd64 -t cloud-auditor-web:local .
+```
+
+---
+
+### Passo 4 — Executar o Cloud Auditor apontando para o LocalStack
+
+```bash
 docker run -d -p 8501:8501 \
+  -v cloud-auditor-data:/app/data \
   -e AWS_ACCESS_KEY_ID="test" \
   -e AWS_SECRET_ACCESS_KEY="test" \
   -e AWS_DEFAULT_REGION="us-east-1" \
-  -e AWS_ENDPOINT_URL="[http://host.docker.internal:4566](http://host.docker.internal:4566)" \
-  hedgaraws/cloud-auditor-web:1.1.1
+  -e AWS_ENDPOINT_URL="http://host.docker.internal:4566" \
+  cloud-auditor-web:local
+```
 
-👨‍💻 Autor
+Se o comando multi-linha falhar no seu terminal, use a versão em uma única linha:
+
+```bash
+docker run -d -p 8501:8501 -v cloud-auditor-data:/app/data -e AWS_ACCESS_KEY_ID="test" -e AWS_SECRET_ACCESS_KEY="test" -e AWS_DEFAULT_REGION="us-east-1" -e AWS_ENDPOINT_URL="http://host.docker.internal:4566" cloud-auditor-web:local
+```
+
+Acesse o painel em: **http://localhost:8501**
+
+> **Nota:** `host.docker.internal` resolve para o host a partir de dentro do contêiner no Docker Desktop (Mac e Windows). No Linux, substitua por `172.17.0.1` ou o IP da interface `docker0`.
+
+---
+
+### Build Multi-Plataforma (amd64 + arm64 simultâneo)
+
+Para gerar e publicar uma imagem que funciona em ambas as arquiteturas:
+
+```bash
+# Criar e ativar um builder multi-arch (necessário apenas uma vez)
+docker buildx create --name multiarch --use
+docker buildx inspect --bootstrap
+
+# Build e push para o Docker Hub
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t SEU_USUARIO/cloud-auditor-web:latest \
+  --push \
+  .
+```
+
+Após o push, o `docker run` usa automaticamente a camada correta para cada arquitetura — sem necessidade de flag `--platform`.
+
+---
+
+## 👨‍💻 Autor
 Hedgar Alves
-
 Arquiteto Cloud &  DevOps
+
+Colaboração
+Luiz Otávio Campedelli
+Cloud Engineer 
 
 LinkedIn: linkedin.com/in/hedgaralves/
 
