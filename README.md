@@ -249,8 +249,11 @@ Após o push, o `docker run` usa automaticamente a camada correta para cada arqu
 
 ## 👨‍💻 Autor
 Hedgar Alves
-
 Arquiteto Cloud &  DevOps
+
+Colaboração
+Luiz Otávio Campedelli
+Cloud Engineer 
 
 LinkedIn: linkedin.com/in/hedgaralves/
 
