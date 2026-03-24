@@ -3,7 +3,7 @@
 Um motor de auditoria leve, containerizado e focado em gerar valor imediato através da identificação de riscos de Segurança da Informação (baseado na ISO 27001) e oportunidades de redução de custos em ambientes AWS.
 
 ![Cloud Auditor Dashboard](https://img.shields.io/badge/Status-V1.1.1_Release-success)
-![Docker Pulls](https://img.shields.io/docker/pulls/hedgaraws/cloud-auditor-web)
+![Docker Pulls](https://img.shields.io/docker/pulls/hedgaraws/cloud-auditor)
 
 ## 🎯 O Problema que Resolve
 Ambientes de nuvem crescem rápido e, sem governança contínua, acumulam recursos ociosos (desperdício financeiro) e configurações incorretas de permissão (riscos de vazamento de dados). Esta ferramenta atua como um scanner *plug-and-play* com um painel executivo (Streamlit) para gestores de TI e arquitetos Cloud obterem um diagnóstico em tempo real.
@@ -54,19 +54,19 @@ Nenhum download de código necessário. A imagem pública funciona diretamente e
 > **Importante:** a imagem do Docker Hub usa PostgreSQL como banco padrão. Passe `DATABASE_URL` apontando para `/tmp` e monte um volume nesse mesmo caminho para persistência:
 
 ```bash
-docker run -d -p 8501:8501 -v cloud-auditor-data:/tmp -e DATABASE_URL="sqlite:////tmp/cloudauditor.db" -e AWS_ACCESS_KEY_ID="SUA_ACCESS_KEY" -e AWS_SECRET_ACCESS_KEY="SEU_SECRET_KEY" -e AWS_DEFAULT_REGION="us-east-1" hedgaraws/cloud-auditor-web:1.1.1
+docker run -d -p 8501:8501 -v cloud-auditor-data:/tmp -e DATABASE_URL="sqlite:////tmp/cloudauditor.db" -e AWS_ACCESS_KEY_ID="SUA_ACCESS_KEY" -e AWS_SECRET_ACCESS_KEY="SEU_SECRET_KEY" -e AWS_DEFAULT_REGION="us-east-1" hedgaraws/cloud-auditor:1.1.1
 ```
 
 Verifique se o volume foi montado corretamente:
 
 ```bash
-docker inspect $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor-web:1.1.1) --format '{{json .Mounts}}'
+docker inspect $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor:1.1.1) --format '{{json .Mounts}}'
 ```
 
 A saída deve conter `"Name":"cloud-auditor-data"` e `"Destination":"/tmp"`. Se o resultado for `[]`, o container foi iniciado sem o volume — pare, remova e reinicie com o comando acima:
 
 ```bash
-docker stop $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor-web:1.1.1) && docker rm $(docker ps -aq --filter ancestor=hedgaraws/cloud-auditor-web:1.1.1)
+docker stop $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor:1.1.1) && docker rm $(docker ps -aq --filter ancestor=hedgaraws/cloud-auditor:1.1.1)
 ```
 
 > Em Mac Apple Silicon (M1/M2/M3/M4) esta imagem roda via emulação e pode exibir um aviso de plataforma. Use a Opção B para build nativo.
@@ -78,24 +78,24 @@ docker stop $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor-web:1.1.1) 
 **Passo 1 — Clone o repositório e entre na pasta:**
 
 ```bash
-git clone https://github.com/hedgaralves/cloud-auditor-web.git
-cd cloud-auditor-web
+git clone https://github.com/hedgaralves/cloud-auditor.git
+cd cloud-auditor
 ```
 
 **Passo 2 — Build da imagem para sua arquitetura:**
 
 ```bash
 # Apple Silicon (M1/M2/M3/M4)
-docker build --platform linux/arm64 -t cloud-auditor-web:local .
+docker build --platform linux/arm64 -t cloud-auditor:local .
 
 # Intel / AMD64
-docker build --platform linux/amd64 -t cloud-auditor-web:local .
+docker build --platform linux/amd64 -t cloud-auditor:local .
 ```
 
 **Passo 3 — Execute:**
 
 ```bash
-docker run -d -p 8501:8501 -v cloud-auditor-data:/app/data -e AWS_ACCESS_KEY_ID="SUA_ACCESS_KEY" -e AWS_SECRET_ACCESS_KEY="SEU_SECRET_KEY" -e AWS_DEFAULT_REGION="us-east-1" cloud-auditor-web:local
+docker run -d -p 8501:8501 -v cloud-auditor-data:/app/data -e AWS_ACCESS_KEY_ID="SUA_ACCESS_KEY" -e AWS_SECRET_ACCESS_KEY="SEU_SECRET_KEY" -e AWS_DEFAULT_REGION="us-east-1" cloud-auditor:local
 ```
 
 ---
@@ -175,8 +175,8 @@ docker logs -f localstack
 Clone o repositório e execute o script de seed para popular o LocalStack com recursos simulados:
 
 ```bash
-git clone https://github.com/hedgaralves/cloud-auditor-web.git
-cd cloud-auditor-web
+git clone https://github.com/hedgaralves/cloud-auditor.git
+cd cloud-auditor
 
 pip install boto3
 AWS_ENDPOINT_URL=http://localhost:4566 python mock_aws_env.py
@@ -191,13 +191,13 @@ O build local garante compatibilidade nativa sem avisos de plataforma.
 **Apple Silicon / ARM64 (M1, M2, M3, M4):**
 
 ```bash
-docker build --platform linux/arm64 -t cloud-auditor-web:local .
+docker build --platform linux/arm64 -t cloud-auditor:local .
 ```
 
 **Intel / AMD64:**
 
 ```bash
-docker build --platform linux/amd64 -t cloud-auditor-web:local .
+docker build --platform linux/amd64 -t cloud-auditor:local .
 ```
 
 ---
@@ -211,13 +211,13 @@ docker run -d -p 8501:8501 \
   -e AWS_SECRET_ACCESS_KEY="test" \
   -e AWS_DEFAULT_REGION="us-east-1" \
   -e AWS_ENDPOINT_URL="http://host.docker.internal:4566" \
-  cloud-auditor-web:local
+  cloud-auditor:local
 ```
 
 Se o comando multi-linha falhar no seu terminal, use a versão em uma única linha:
 
 ```bash
-docker run -d -p 8501:8501 -v cloud-auditor-data:/app/data -e AWS_ACCESS_KEY_ID="test" -e AWS_SECRET_ACCESS_KEY="test" -e AWS_DEFAULT_REGION="us-east-1" -e AWS_ENDPOINT_URL="http://host.docker.internal:4566" cloud-auditor-web:local
+docker run -d -p 8501:8501 -v cloud-auditor-data:/app/data -e AWS_ACCESS_KEY_ID="test" -e AWS_SECRET_ACCESS_KEY="test" -e AWS_DEFAULT_REGION="us-east-1" -e AWS_ENDPOINT_URL="http://host.docker.internal:4566" cloud-auditor:local
 ```
 
 Acesse o painel em: **http://localhost:8501**
@@ -238,7 +238,7 @@ docker buildx inspect --bootstrap
 # Build e push para o Docker Hub
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t SEU_USUARIO/cloud-auditor-web:latest \
+  -t SEU_USUARIO/cloud-auditor:latest \
   --push \
   .
 ```
