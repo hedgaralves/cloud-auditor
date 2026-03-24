@@ -4,6 +4,7 @@ Um motor de auditoria leve, containerizado e focado em gerar valor imediato atra
 
 ![Cloud Auditor Dashboard](https://img.shields.io/badge/Status-V1.1.1_Release-success)
 ![Docker Pulls](https://img.shields.io/docker/pulls/hedgaraws/cloud-auditor)
+[![Hypercommit](https://img.shields.io/badge/Hypercommit-DB2475)](https://hypercommit.com/cloud-auditor)
 
 ## 🎯 O Problema que Resolve
 Ambientes de nuvem crescem rápido e, sem governança contínua, acumulam recursos ociosos (desperdício financeiro) e configurações incorretas de permissão (riscos de vazamento de dados). Esta ferramenta atua como um scanner *plug-and-play* com um painel executivo (Streamlit) para gestores de TI e arquitetos Cloud obterem um diagnóstico em tempo real.
