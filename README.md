@@ -2,20 +2,21 @@
 
 Um motor de auditoria leve, containerizado e focado em gerar valor imediato através da identificação de riscos de Segurança da Informação (baseado na ISO 27001) e oportunidades de redução de custos em ambientes AWS.
 
-![Cloud Auditor Dashboard](https://img.shields.io/badge/Status-V1.1.1_Release-success)
+![Cloud Auditor Dashboard](https://img.shields.io/badge/Status-V1.1.2_Release-success)
 ![Docker Pulls](https://img.shields.io/docker/pulls/hedgaraws/cloud-auditor)
 
 ## 🎯 O Problema que Resolve
 Ambientes de nuvem crescem rápido e, sem governança contínua, acumulam recursos ociosos (desperdício financeiro) e configurações incorretas de permissão (riscos de vazamento de dados). Esta ferramenta atua como um scanner *plug-and-play* com um painel executivo (Streamlit) para gestores de TI e arquitetos Cloud obterem um diagnóstico em tempo real.
 
-## 🆕 Novidades na Versão 1.1.1
+## 🆕 Novidades na Versão 1.1.2
+* **Atualização de Segurança e Correção de Vulnerabilidades:** Ajuste de dependências base e sanitização estrita da imagem Docker para zero CVEs.
 * **Novo UI/UX Profissional:** Reformulação completa com estética Glassmorphic (Dark Mode e Gradiente Laranja/Roxo).
 * **Histórico de Auditorias:** Aba lateral para Persistir e salvar históricos recentes no banco de dados (SQLite/PostgreSQL).
 * **9 Novas Varreduras Adicionadas (CSPM e FinOps):**
   * **(Sec)** Rastreio de IAM Access Keys caducas (>90 dias), mapeamento de Bancos de Dados RDS expostos (Públicos), Ausência de `CloudTrail` ligado na conta e detecção falhas de criptografia nativa no EBS.
   * **(FinOps)** Monitoramento de NAT Gateways provisionados/faturando, Snapshots de discos órfãos com mais de 90 dias, alertas de modernização com base em IA para instâncias ultrapassadas (t2/m4) e detecção de buckets do S3 sem política de ciclo de vida atrelada ao Glacier.
 
-## 🚀 Funcionalidades (Core v1.1.1)
+## 🚀 Funcionalidades (Core v1.1.2)
 
 **💰 Otimização de Custos Extreme (FinOps):**
 * **Snapshots Órfãos (>90d):** Caça rastros de Backups EBS sem utilidade retidos por longo período.
@@ -54,19 +55,19 @@ Nenhum download de código necessário. A imagem pública funciona diretamente e
 > **Importante:** a imagem do Docker Hub usa PostgreSQL como banco padrão. Passe `DATABASE_URL` apontando para `/tmp` e monte um volume nesse mesmo caminho para persistência:
 
 ```bash
-docker run -d -p 8501:8501 -v cloud-auditor-data:/tmp -e DATABASE_URL="sqlite:////tmp/cloudauditor.db" -e AWS_ACCESS_KEY_ID="SUA_ACCESS_KEY" -e AWS_SECRET_ACCESS_KEY="SEU_SECRET_KEY" -e AWS_DEFAULT_REGION="us-east-1" hedgaraws/cloud-auditor:1.1.1
+docker run -d -p 8501:8501 -v cloud-auditor-data:/tmp -e DATABASE_URL="sqlite:////tmp/cloudauditor.db" -e AWS_ACCESS_KEY_ID="SUA_ACCESS_KEY" -e AWS_SECRET_ACCESS_KEY="SEU_SECRET_KEY" -e AWS_DEFAULT_REGION="us-east-1" hedgaraws/cloud-auditor:1.1.2
 ```
 
 Verifique se o volume foi montado corretamente:
 
 ```bash
-docker inspect $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor:1.1.1) --format '{{json .Mounts}}'
+docker inspect $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor:1.1.2) --format '{{json .Mounts}}'
 ```
 
 A saída deve conter `"Name":"cloud-auditor-data"` e `"Destination":"/tmp"`. Se o resultado for `[]`, o container foi iniciado sem o volume — pare, remova e reinicie com o comando acima:
 
 ```bash
-docker stop $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor:1.1.1) && docker rm $(docker ps -aq --filter ancestor=hedgaraws/cloud-auditor:1.1.1)
+docker stop $(docker ps -q --filter ancestor=hedgaraws/cloud-auditor:1.1.2) && docker rm $(docker ps -aq --filter ancestor=hedgaraws/cloud-auditor:1.1.2)
 ```
 
 > Em Mac Apple Silicon (M1/M2/M3/M4) esta imagem roda via emulação e pode exibir um aviso de plataforma. Use a Opção B para build nativo.
